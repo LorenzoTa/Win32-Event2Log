@@ -31,14 +31,7 @@ sub new {
 				$opt{mainlog} = './'.(caller())[1].'-history.log';
 			}
 	  }
-	  # $opt{mainlog}  	 = $arg{verbosity} ? ( 
-												# defined $opt{mainlog} 	?
-												# $arg{mainlog} = $opt{mainlog}:
-												# './'.(caller())[1].'-history.log'
-											 # ) 
-											# : undef;
 	  $opt{lastreadfile} = $arg{lastreadfile}  ||  './'.(caller())[1].'-lastread.log';
-	  	  
 	  return bless {
 					interval 	=> $opt{interval}, 
 					computer 	=> $opt{computer},
