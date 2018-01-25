@@ -1,0 +1,50 @@
+Win32-Event2Log
+
+This module uses Win32::EventLog and parses windows events and write them to plain logfiles.
+This module is rule based: a rule it's a minimal set of conditions to be met to write an entry to a logfile.
+You must add valid rules before starting the engine.
+Once started, the engine will check events every x seconds (specified using C<interval> argument)
+and for every registry (System, Application, Security, Installation or a user defined one) that is requested
+at least in one rule will check for an event's source specified and optionally for some text contained in the
+event's description. If the rule it's successful then an entry it's wrote in the specified logfile.
+A custom callback can transofrm the line to be wrote using the C<format> option.
+The engine can optionally shutdown itself if endtime it is specified.
+
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc Win32::Event2Log
+
+You can also look for information at:
+
+    RT, CPAN's request tracker (report bugs here)
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Win32-Event2Log
+
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/Win32-Event2Log
+
+    CPAN Ratings
+        http://cpanratings.perl.org/d/Win32-Event2Log
+
+    Search CPAN
+        http://search.cpan.org/dist/Win32-Event2Log/
+
+
+LICENSE AND COPYRIGHT
+
+Copyright (C) 2018 Lorenzo Taviani
+
+This program is released under the following license: Perl
+
