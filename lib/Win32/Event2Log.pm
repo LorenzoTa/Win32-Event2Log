@@ -228,12 +228,12 @@ sub start{
 			my $evnt;
 			# number of records read
 			my $read;
-			while ($$lastread < $recs) {
+			while ($$lastread < $recs + $base - 1 ) {
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
-									$base+$$lastread,   # offset
+									$read+$base,   # offset
 									$evnt )      		# the hashref populeted
-							or die "Can't read EventLog entry #$$lastread\n";
+							or die "Can't read EventLog entry ".($read+$base)."\n";
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
 						if ( 	$evnt->{Source} =~ $rule->{source} and
