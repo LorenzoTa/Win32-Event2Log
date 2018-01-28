@@ -208,6 +208,7 @@ sub start{
 		# foreach registry
 		foreach my $reg (keys %{$self->{rules}}){
 			my $lastread = \$self->{$reg.'_last'};
+			my $first_read = $$lastread;
 			#####
 			my $handle=Win32::EventLog->new($reg, $self->{computer}) or die "Can't open $reg EventLog\n";
 			# get message automatically populateed
@@ -257,7 +258,7 @@ sub start{
 					$read++;
 					$$lastread = $evnt->{RecordNumber};
 			}
-		print "succesfully read $read events from $reg registry from $base to $$lastread\n" if $$verbosity > 0;
+		print "succesfully read $read events from $reg registry from $first_read to $$lastread\n" if $$verbosity > 0;
 		} # end of foreach registry
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
