@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 29;
+our $VERSION = 30;
 
 
 
@@ -222,7 +222,7 @@ sub start{
 				next; # go to next registry
 			}
 			else{		
-					print "registry $reg reading a total of $recs events from oldest event num. $base\n" if $$verbosity > 0;
+					print "registry $reg has a total of $recs events with oldest with num. $base\n" if $$verbosity > 2;
 			
 					#print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
 					#		$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
