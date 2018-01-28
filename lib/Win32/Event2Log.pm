@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 28;
+our $VERSION = 29;
 
 
 
@@ -158,10 +158,6 @@ sub start{
 		return;
 	}
 	my $verbosity = \$self->{verbosity};
-	print 	scalar(localtime(time))," ",
-			+(join ' line ',(caller())[1..2])," started the engine (",
-			__PACKAGE__," v. ",$Win32::Event2Log::VERSION,")\n"
-			if  $$verbosity > 0;
 	if ($self->{mainlog}){
 		if (open my $logfh, '>>', $self->{mainlog}){
 			print "all output redirected to ",$self->{mainlog},"\n" if $$verbosity > 0;
@@ -172,6 +168,11 @@ sub start{
 						" in appending mode! using STDOUT";
 		}
 	}
+	print 	"\n\n",scalar(localtime(time))," ",
+			+(join ' line ',(caller())[1..2])," started the engine (",
+			__PACKAGE__," v. ",$Win32::Event2Log::VERSION,")\n"
+			if  $$verbosity > 0;
+	
 	if (-e $self->{lastreadfile}){
 		print "last numbers of each event registry parsed retrieved and stored to ",
 				$self->{lastreadfile},"\n" if $$verbosity > 0;
@@ -219,9 +220,11 @@ sub start{
 				print scalar(localtime(time))," no new events to read from $reg\n" if $$verbosity > 0;
 				next; # go to next registry
 			}
-			else{
-					print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
-							$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
+			else{		
+					print "registry $reg reading a total of $recs events from oldest event num. $base\n" if $$verbosity > 0;
+			
+					#print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
+					#		$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
 			}
 			# see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363646(v=vs.85).aspx 
 			# for event datastructure description
@@ -254,7 +257,7 @@ sub start{
 					$read++;
 					$$lastread = $evnt->{RecordNumber};
 			}
-		print "succesfully read $read events from $reg registry\n" if $$verbosity > 0;
+		print "succesfully read $read events from $reg registry from $base to $$lastread\n" if $$verbosity > 0;
 		} # end of foreach registry
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
