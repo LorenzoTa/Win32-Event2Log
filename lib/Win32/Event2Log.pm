@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 26;
+our $VERSION = 27;
 
 
 
@@ -227,7 +227,7 @@ sub start{
 			# for event datastructure description
 			my $evnt;
 			# number of records read
-			my $read;
+			my $read = 0;
 			while ($$lastread < $recs + $base - 1 ) {
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
