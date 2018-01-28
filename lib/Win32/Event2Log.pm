@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 30;
+our $VERSION = 31;
 
 
 
@@ -222,7 +222,7 @@ sub start{
 				next; # go to next registry
 			}
 			else{		
-					print "registry $reg has a total of $recs events with oldest with num. $base\n" if $$verbosity > 2;
+					print "registry $reg has a total of $recs events with oldest with num. $base (last read was $$lastread)\n" if $$verbosity > 1;
 			
 					#print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
 					#		$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
@@ -232,12 +232,14 @@ sub start{
 			my $evnt;
 			# number of records read
 			my $read = 0;
+			#print "registry $reg ready to read a total of $recs events from oldest event num. $base (last read was $$lastread)\n";
 			while ($$lastread < $recs + $base - 1 ) {
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
 									$read+$base,   # offset
 									$evnt )      		# the hashref populeted
 							or die "Can't read EventLog entry ".($read+$base)."\n";
+					$first_read  = $evnt->{RecordNumber} if $first_read == 0;
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
 						if ( 	$evnt->{Source} =~ $rule->{source} and
@@ -248,7 +250,7 @@ sub start{
 							open my $fh, '>>',$rule->{log} or die "unable to append to $rule->{log}";
 							print $fh $rule->{format}->($evnt);
 							close $fh;
-							print $rule->{name}," matched! wrote $reg event number ",
+							print "'",$rule->{name},"' matched! wrote $reg event number ",
 									$evnt->{RecordNumber}," to ",$rule->{log},"\n" 
 									if $$verbosity > 1;
 							print Dumper \$evnt if $$verbosity > 2;
@@ -258,7 +260,7 @@ sub start{
 					$read++;
 					$$lastread = $evnt->{RecordNumber};
 			}
-		print "succesfully read $read events from $reg registry from $first_read to $$lastread\n" if $$verbosity > 0;
+		print "succesfully read $read events from $reg registry from $first_read to $$lastread included\n" if $$verbosity > 0;
 		} # end of foreach registry
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
@@ -296,7 +298,7 @@ sub show_conf{
 			grep{$_ ne 'rules'} sort keys %$self;
 	foreach my $reg (sort keys %{$self->{rules}}){
 			foreach my $rule ( @{$self->{rules}->{$reg}} ){
-				print "\nrule  ",$rule->{name}," for the registry ".$reg.":\n\n";
+				print "\nrule  '",$rule->{name},"' for the registry ".$reg.":\n\n";
 				print 	map{"$_".(' ' x (14 - length $_)).$rule->{$_}."\n"			
 						} grep {$_ ne 'format' and $_ ne 'name'} sort keys %$rule;
 				print "format        ",(Dumper \$rule->{format}),"\n";
