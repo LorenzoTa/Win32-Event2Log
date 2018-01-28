@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 33;
+our $VERSION = 35;
 
 
 
@@ -308,11 +308,11 @@ sub show_conf{
 
 sub eventtype_to_num{
 	my $str = shift;
-	$str =~ s/E|error/1/g;
-	$str =~ s/W|warning/2/g;
-	$str =~ s/I|information/4/g;
-	$str =~ s/S|sucess\s|_A|audit/8/g;
-	$str =~ s/F|failure\s|_A|audit/16/g;
+	$str =~ s/(E|e)rror/1/g;
+	$str =~ s/(W|w)arning/2/g;
+	$str =~ s/(I|i)nformation/4/g;
+	$str =~ s/(S|s)ucess(\s|_)?(A|a)udit/8/g;
+	$str =~ s/(F|f)ailure(\s|_)?(A|a)udit/16/g;
 	$str =~ s/\s+//g;
 	return $str;
 }
