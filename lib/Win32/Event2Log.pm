@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 32;
+our $VERSION = 33;
 
 
 
@@ -312,19 +312,20 @@ sub eventtype_to_num{
 	$str =~ s/W|warning/2/g;
 	$str =~ s/I|information/4/g;
 	$str =~ s/S|sucess\s|_A|audit/8/g;
-	$str =~ s/F|failure\s|_A|audit/10/g;
+	$str =~ s/F|failure\s|_A|audit/16/g;
 	$str =~ s/\s+//g;
 	return $str;
 }
 sub num_to_eventtype{
 	my $type = shift;
 	# see again https://msdn.microsoft.com/en-us/library/windows/desktop/aa363646(v=vs.85).aspx
+	# and also  https://msdn.microsoft.com/en-us/library/ms813548.aspx
 	my %conv = (
 		1 	=> 'Error',
 		2 	=> 'Warning',
 		4 	=> 'Information',
 		8 	=> 'Success_Audit',
-		10	=> 'Failure_Audit'
+		16	=> 'Failure_Audit'
 	);
 	if (defined $conv{$type}){
 		return $conv{$type};
