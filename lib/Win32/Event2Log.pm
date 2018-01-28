@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 27;
+our $VERSION = 28;
 
 
 
@@ -330,13 +330,13 @@ sub num_to_eventtype{
 
 __DATA__
 
-=head1 NAME
+=head1 name
 
 Win32::Event2Log
 
 =cut
 
-=head1 DESCRIPTION
+=head1 description
 
 This module uses L<Win32::EventLog> and parses windows events and write them to plain logfiles.
 This module is rule based: a rule it's a minimal set of conditions to be met to write an entry to a logfile.
@@ -349,7 +349,7 @@ A custom callback can transofrm the line to be wrote using the C<format> option.
 The parser can optionally shutdown itself if C<endtime> it is specified.
 
 
-=head1 SYNOPSIS
+=head1 synopsis
 	
 	use strict;
 	use warnings;
@@ -397,7 +397,7 @@ The parser can optionally shutdown itself if C<endtime> it is specified.
 	# from now the engine will run forever unless endtime was specified
 	$engine->start;
 	
-=head1 METHODS
+=head1 methods
 
 =head2 new
 
@@ -500,7 +500,94 @@ This method can be used to nicely dump the current engine configuration and all 
 It is used internally to print the configuration before starting reading events if C<verbosity> is set to 1 or more.
 
 
-=head1 AUTHOR
+
+=head1 examples
+
+=head3 a simple one
+
+Bilel is a Linux system administrator experienced with grep and ack but at work he has a windows10 client.
+He notices strange system errors and after had spent an hour searching the Event Viewer he decides to automate
+the export of all errors and warnings of the System registry to a plain log file to analyze it with command
+line tools he already masters. He write the following program:
+
+	use strict;
+	use warnings;
+
+	use Win32::Event2Log;
+
+	my $main_log = $0.'.mainlog.log';
+	my $last_numbers_log = $0.'.last_numbers.log';
+	my $sys_errors_log = $0.'.System_err_warn.log';
+
+
+	my $engine = Win32::Event2Log->new(	
+				interval 	=> 60,
+				endtime 	=> 0,
+				mainlog 	=> $main_log,	
+				verbosity	=> 2,
+				lastreadfile=> $last_numbers_log,		
+	);
+
+	$engine->add_rule (
+				registry => 'System',
+				eventtype=> 'error|warning',
+				source	 => qr/./,
+				log		 => $sys_errors_log, 
+				name 	 => 'System errors and warnings',			
+	);
+
+	$engine->start;
+
+He launchs the above program and he sees just two lines in the console: the first stating the
+engine was started and the latter saying all the output was redirected to the main log he
+specified in the engine constructor.
+
+He open the above file to review the rule configuration and he sees:
+
+	rule  'System errors and warnings' for the registry System:
+
+	eventtype     (?^:1|2)
+	log           event2log-test01.pl.System_err_warn.log
+	regex         (?^:.)
+	source        (?^:.)
+	format        $VAR1 = \sub {
+				  package Win32::Event2Log;
+				  use warnings;
+				  use strict;
+				  my $ev = shift();
+				  if (defined $ev->{'Message'}) {
+					  $ev->{'Message'} =~ s/\n/ /g;
+				  }
+				  else {
+					  $ev->{'Message'} = '-no message defined-';
+				  }
+				  return scalar localtime($ev->{'TimeGenerated'}) . "\t" . $ev->{'Source'} . "\t" . num_to_eventtype($ev->{'EventType'}) . "\t" . $ev->{'Message'} . "\n";
+			  };
+
+All is as expected. He also notices that 1586 events were already read and 14 were wrote 
+to the destination log and that the engine checks for new events every 60 seconds.
+
+After some time he shutdowns the client and wonders what will happen whith his logs. He launchs
+again the above program and opening the main log he is happy noticing the program started
+reading from event 1587  and appended new events correctly to his file. It schedule the program
+to run at startup and forget about it.
+
+
+=head3 a more complex one
+
+Lidia is a Perl programmer used to work in Win32 environments. She was tasked to secure a MSSQL server
+against brute force attacks. She worte a nice program similar to fail2ban in Perl that adds temporary
+rules to the local firewall. She though needs a plain logfile to itercept failed MSSQL logins and the
+source IPs of the attempts.
+
+She arrange the following program:
+
+
+
+
+
+
+=head1 author
 
 Lorenzo Taviani, C<< <lorenzo at cpan.org> >>
 
@@ -515,7 +602,7 @@ automatically be notified of progress on your bug as I make changes.
 
 
 
-=head1 SUPPORT
+=head1 support
 
 You can find documentation for this module with the perldoc command.
 
@@ -545,12 +632,12 @@ L<http://search.cpan.org/dist/Win32-Event2Log/>
 =back
 
 
-=head1 ACKNOWLEDGEMENTS
+=head1 acknoweledgemnts 
 
 This module would be not pssible without the underlying L<Win32::EventLog> one so many thanks to Jan Dubois for his work.
 
 
-=head1 LICENSE AND COPYRIGHT
+=head1 license and copyright 
 
 Copyright 2018 Lorenzo Taviani.
 
