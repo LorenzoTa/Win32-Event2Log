@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 35;
+our $VERSION = 36;
 
 
 
@@ -159,8 +159,10 @@ sub start{
 	}
 	my $verbosity = \$self->{verbosity};
 	if ($self->{mainlog}){
-		if (open my $logfh, '>>', $self->{mainlog}){
+		my $logfh;
+		if ( open $logfh, '>>', $self->{mainlog} ){
 			print "all output redirected to ",$self->{mainlog},"\n" if $$verbosity > 0;
+			$logfh->autoflush(1);
 			select $logfh;
 		}		
 		else {
@@ -260,7 +262,8 @@ sub start{
 					$read++;
 					$$lastread = $evnt->{RecordNumber};
 			}
-		print "succesfully read $read events from $reg registry from $first_read to $$lastread included\n" if $$verbosity > 0;
+		print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
+				if $$verbosity > 0;
 		} # end of foreach registry
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
@@ -289,8 +292,11 @@ sub show_conf{
 				"$_".(' ' x (18 - length $_)).
 				(defined $$self{$_} ?
 					( 	
-						$_ eq 'endtime' ? 
-						(scalar localtime ($$self{$_})).' ('.$$self{$_}.')' : 
+						$_ eq 'endtime' ? ( $$self{$_} ? 
+											scalar localtime ($$self{$_}).' ('.$$self{$_}.')'  :
+											'never (0)'
+										)											
+						 : 
 						$$self{$_} 
 					)	:
 				'')."\n"			
@@ -476,7 +482,7 @@ or as string but internally will be compiled as regex. It defaults to C< qr/./ >
 An optional callback can be passed with the option C<format> and will be used to format the line written to the logfile.
 In this callback the object representing the event will be received as first argument.
 The callback must return a string to be written. So you can grab and transform each event fields at your will.
-Note also that you can use the C<num_to_eventtype> function inside your callback to have back a meaningful string instead
+Note also that you can use the C<Win32::Event2Log::num_to_eventtype> function inside your callback to have back a meaningful string instead
 of a bare number for the type of the event.
 Events fields are: C<Computer User TimeGenerated Strings RecordNumber Data Timewritten Message EventID Source Category Length ClosingRecordNumber EventType>
 or at least these are those exposed by L<Win32::EventLog> 
@@ -491,7 +497,7 @@ The C<format> options defaults to the following code:
 		else{$ev->{Message} = '-no message defined-'}
 		return  scalar localtime($ev->{TimeGenerated})."\t".
 				$ev->{Source}."\t".
-				num_to_eventtype($ev->{EventType})."\t".
+				Win32::Event2Log::num_to_eventtype($ev->{EventType})."\t".
 				$ev->{Message}."\n";
 	};
 
@@ -545,9 +551,8 @@ line tools he already masters. He write the following program:
 
 	$engine->start;
 
-He launchs the above program and he sees just two lines in the console: the first stating the
-engine was started and the latter saying all the output was redirected to the main log he
-specified in the engine constructor.
+He launchs the above program and he sees just one line in the console stating that
+all the output was redirected to the main log specified in the engine constructor.
 
 He open the above file to review the rule configuration and he sees:
 
@@ -571,12 +576,13 @@ He open the above file to review the rule configuration and he sees:
 				  return scalar localtime($ev->{'TimeGenerated'}) . "\t" . $ev->{'Source'} . "\t" . num_to_eventtype($ev->{'EventType'}) . "\t" . $ev->{'Message'} . "\n";
 			  };
 
+
 All is as expected. He also notices that 1586 events were already read and 14 were wrote 
 to the destination log and that the engine checks for new events every 60 seconds.
 
 After some time he shutdowns the client and wonders what will happen whith his logs. He launchs
 again the above program and opening the main log he is happy noticing the program started
-reading from event 1587  and appended new events correctly to his file. It schedule the program
+reading from event 1587  and appended new events correctly to his file. He schedules the program
 to run at startup and forget about it.
 
 
@@ -585,20 +591,96 @@ to run at startup and forget about it.
 Lidia is a Perl programmer used to work in Win32 environments. She was tasked to secure a MSSQL server
 against brute force attacks. She worte a nice program similar to fail2ban in Perl that adds temporary
 rules to the local firewall. She though needs a plain logfile to itercept failed MSSQL logins and the
-source IPs of the attempts.
+source IPs of the attempts. She has enough experience to know that even if such attempts are shown as
+information, with the information icon, in the Event Viewer, they really are 'Failure Audit' ones.
+
+She also wants her logfiles to be daily, so she wants her program to stop at 23:59 
 
 She arrange the following program:
 
+	use strict;
+	use warnings;
+	use DateTime;
+	use Win32::Event2Log;
+
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	my $daily_string = ($year + 1900).'-'.(sprintf '%02d',$mon + 1).'-'.(sprintf '%02d',$mday).'.log';
+
+	my $next_end_of_day = DateTime->new(
+		year       => $year + 1900,
+		month      => $mon + 1,
+		day        => $mday,
+		hour       => 23,
+		minute     => 59,
+		second     => 59,
+		 time_zone  => 'Europe/Rome',
+	);
+
+	print "$0 scheduled to stop at ",(scalar localtime ($next_end_of_day->epoch)),"\n",
+			"daily logfile is $daily_string\n";
+
+
+	my $main_log = $0.'.mainlog.log';
+	my $last_numbers_log = $0.'.last_numbers.log';
+	my $mssql_log = $daily_string;
 
 
 
+	my $engine = Win32::Event2Log->new(	
+				interval 	=> 120,
+				endtime 	=> $next_end_of_day->epoch(),
+				mainlog 	=> $main_log,	
+				verbosity	=> 0,
+				lastreadfile=> $last_numbers_log,		
+	);
+
+	$engine->add_rule (
+				name 	 => 'mssql_wrong_logins',
+				registry => 'Application',
+				eventtype=> 'Failure Audit',
+				source	 => 'MSSQLSERVER',
+				regex	 => qr/Password did not match that for the login provided/,
+				log      => $mssql_log,
+				format	 => \&clean_output,
+							
+	);
+
+	sub clean_output {
+
+		my $ev = shift;
+		if (defined $ev->{'Message'}) {
+						  $ev->{'Message'} =~ s/\n/ /g;
+						  $ev->{'Message'} = lc ($ev->{'Message'});
+					  }
+		# she needs time in seconds since epoch in her other program
+		return $ev->{TimeGenerated},"\t",
+		Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
+		$ev->{Message}."\n";
+	}
+
+	$engine->show_conf;
 
 
-=head1 author
+	$engine->start;
 
-Lorenzo Taviani, C<< <lorenzo at cpan.org> >>
+She runs the above program and sees the logfile growing up to 4Mb. See below caveats about interval.
 
-=head1 BUGS
+
+=head1 caveats
+
+When many many entries had to be read and written back and the time needed to do so exceeds what 
+specified as C<interval> it may happens that last numbers are no correctly written to the file C<lastreadfile>
+I'm investigating this issue happened rarely in a very busy server and I'm not sure it depends on my
+design or on how C<Storable> works and interacts with the operating system.
+
+Typically this can happen when a registry is parsed for the first time and if you notice duplicate entries in your
+destination log you can workaround this misbehaviour running the first time your program with a short
+value for the C<endtime> option, like C< endtime =E<gt> time + 10> a distinct log for your rule, as
+C< log =E<gt> 'previous_entry' > but, very important, leaving untouched C<lastreadfile> so next run of your
+program will read just new entries.
+
+
+=head1 bugs
 
 The main support forum for this module is perlmonks.org 
 
@@ -607,6 +689,9 @@ the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-Even
 automatically be notified of progress on your bug as I make changes.
 
 
+=head1 author
+
+Lorenzo Taviani, C<< <lorenzo at cpan.org> >>
 
 
 =head1 support
