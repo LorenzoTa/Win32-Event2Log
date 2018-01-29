@@ -25,7 +25,8 @@ my $rule = $parser->add_rule( registry => 'System' );
 ok ($rule == 0, "invalid rule check 1 (the above carp's messages are expected)");
 
 $rule = $parser->add_rule( registry => 'System', source => 'XXX' );
-ok ($rule == 0, "invalid rule check 2 (the above carp's messages are expected)");
+ok ($rule == 0, "invalid rule check 2");
+diag ("  ^^^the above carp's messages are expected");
 
 # add a valid rule
 $rule = $parser->add_rule( registry => 'System', source => 'Kernel-General', log => $ENV{TEMP}.'\logfile.log' );
