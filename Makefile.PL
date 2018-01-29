@@ -7,7 +7,7 @@ WriteMakefile(
     NAME             => 'Win32::Event2Log',
     AUTHOR           => q{Lorenzo Taviani <lorenzo@cpan.org>},
     VERSION_FROM     => 'lib/Win32/Event2Log.pm',
-    ABSTRACT_FROM    => 'lib/Win32/Event2Log.pm',
+    ABSTRACT    => 'Event2Log.pm',
     LICENSE          => 'Perl',
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.006',
