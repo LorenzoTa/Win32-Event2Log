@@ -423,9 +423,9 @@ C<computer> specify which machine will be interrogated to read events. It is inf
 read events from remote systems for example in a domain environment. It defaults to the local
 system as found in the environment variable C<$ENV{COMPUTERNAME}>
 
-C<endtime> lets you to specify when the engine will stops. It defaults to 0 meaning forever.
+C<endtime> lets you to specify when the engine will stops. It defaults to 0 meaning never.
 If you set C< endtime =E<gt> time + 3600> the engine will run just an hour. If you want, for example, the
-engine to stop at midnight it's up to you to specify seconds from the epoch of the next midnight.
+engine to stop at midnight it's up to you to specify seconds since epoch of the next midnight.
 
 The C<verbosity> option can vary from 0 (almost no output) to 3 (which will dump also events that match
 a rule and many other things). It defaults to 0 as the engine is meant to be run as scheduled task or at
@@ -449,7 +449,7 @@ and the file will be in the current directory.
 =head2 add_rule
 
 This is the method to be used to add rules to the engine. Infact an engine without rules is unuseful at all.
-If an event matches a rule it wil be written to the appropriate logfile,
+If an event matches a rule it will be written to the appropriate logfile,
 A rule construction accept many arguments: C<registry source log> are mandatory, while other are optional.
 
 C<registry> is the event registry (C<System> or C<Application> for example) where the rule is applied. This 
@@ -471,12 +471,12 @@ C<name> it is the optional name you want to assign to the rule. If you do not sp
 name containing the registry too will be created for you.
 
 C<eventtype> it's an option to filter types of event. Internally types are numerical fields with the following meanings:
-C< 1 'Error', 2 'Warning', 4 'Information', 8 'Success_Audit', 10 'Failure_Audit'>
+C< 1 'Error', 2 'Warning', 4 'Information', 8 'Success_Audit', 16 'Failure_Audit'>
 Anyway for your lazyness you can specify them as lowercase strings separated by C<|> or as a regex and then
 internally will be transformed into a regex using numerical values.
 So C< eventtype => 'error|warning'> is the same of C< eventtype => 'Error|Warning'> and of C< eventtype => qr/^1|2$/>
 
-C<regex> it is an option to filter just events which message text match what you want. It can be passed as compiled regex
+C<regex> it is an option to filter just events which message text matches what you want. It can be passed as compiled regex
 or as string but internally will be compiled as regex. It defaults to C< qr/./ >
 
 An optional callback can be passed with the option C<format> and will be used to format the line written to the logfile.
@@ -487,7 +487,7 @@ of a bare number for the type of the event.
 Events fields are: C<Computer User TimeGenerated Strings RecordNumber Data Timewritten Message EventID Source Category Length ClosingRecordNumber EventType>
 or at least these are those exposed by L<Win32::EventLog> 
 See L<https://msdn.microsoft.com/en-us/library/windows/desktop/aa363646(v=vs.85).aspx> for further informations.
-The C<format> options defaults to the following code:
+The C<format> option defaults to the following code:
 
 	sub{
 		my $ev = shift;
@@ -504,8 +504,8 @@ The C<format> options defaults to the following code:
 
 =head2 start
 
-This is the method to start the engine. It just fails if no rule is defined. It runs the engine forever or until a
-C<endtime> was specified in the engine configuration.
+This is the method to start the engine. It just fails if no rule are defined. It runs the engine forever or until an
+C<endtime> as specified in the engine configuration.
 
 =head2 show_conf
 
