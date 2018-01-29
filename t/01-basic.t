@@ -22,11 +22,12 @@ ok ( $parser->{interval} == 7, "custom interval");
 $parser = Win32::Event2Log->new();
 
 my $rule = $parser->add_rule( registry => 'System' );
-ok ($rule == 0, "invalid rule check 1 (the above carp's messages are expected)");
+diag ("  ^^^ the above carp's messages are expected");
+ok ($rule == 0, "invalid rule check 1");
 
 $rule = $parser->add_rule( registry => 'System', source => 'XXX' );
+diag ("  ^^^ the above carp's messages are expected");
 ok ($rule == 0, "invalid rule check 2");
-diag ("  ^^^the above carp's messages are expected");
 
 # add a valid rule
 $rule = $parser->add_rule( registry => 'System', source => 'Kernel-General', log => $ENV{TEMP}.'\logfile.log' );
@@ -37,31 +38,31 @@ ok ($rule2 == 1, "another valid rule check");
 ok (keys %{$parser->{rules}} == 2, "coherent number of registry rules");
 # regexes in rule for the text regex
 my $rule3 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => 'invalid[class' );
-								
-ok ($rule3 == 0, "invalid regex in rule (regex) (the above carp's messages are expected)");
+				log => $ENV{TEMP}.'\logfile3.log',regex => 'invalid[class' );
+diag ("  ^^^ the above carp's messages are expected");
+ok ($rule3 == 0, "invalid regex in rule (regex)");
 
 my $rule4 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => 'dips|uptime' );
+				log => $ENV{TEMP}.'\logfile3.log',regex => 'dips|uptime' );
 ok ($rule4 == 1, "valid regex in rule for regex as string");
 
 my $rule5 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => qr/a/i );
+				log => $ENV{TEMP}.'\logfile3.log',regex => qr/a/i );
 ok ($rule5 == 1, "valid regex in rule as compiled regex");
 							
 
 # regexes in rule for the source
 my $rule6 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => 'invalid[class' );
+				log => $ENV{TEMP}.'\logfile3.log',regex => 'invalid[class' );
 								
 ok ($rule6 == 0, "invalid regex in rule (source) (the above carp's messages are expected)");
 
 my $rule7 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => 'EventLog|VSS' );
+				log => $ENV{TEMP}.'\logfile3.log',regex => 'EventLog|VSS' );
 ok ($rule7 == 1, "valid regex in rule for source as string");
 
 my $rule8 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
-								log => $ENV{TEMP}.'\logfile3.log',regex => qr/vss/i );
+				log => $ENV{TEMP}.'\logfile3.log',regex => qr/vss/i );
 ok ($rule8 == 1, "valid regex in rule for source as compiled regex");
 
 undef $parser;
@@ -69,18 +70,18 @@ my $temp_log  = $ENV{TEMP}.'\temp-win32-event2log-logfile.log';
 my $temp_last = $ENV{TEMP}.'\temp-win32-event2log-last.log';
 my $temp_main = $ENV{TEMP}.'\temp-win32-event2log-main.log';
 $parser = Win32::Event2Log->new(	
-									verbosity => 3,
-									endtime => time+2,
-									lastreadfile => $temp_last,
-									mainlog => $temp_main,
+					verbosity => 3,
+					endtime => time+2,
+					lastreadfile => $temp_last,
+					mainlog => $temp_main,
 );
 my $rule9 = $parser->add_rule( 		
-									name => 'system-temp-rule',
-									registry => 'System', 
-									source => '^Event', 
-									log => $temp_log,
-									regex => qr/.*/,
-									eventtype => 'warning|error|information',
+					name => 'system-temp-rule',
+					registry => 'System', 
+					source => '^Event', 
+					log => $temp_log,
+					regex => qr/.*/,
+					eventtype => 'warning|error|information',
 );
 diag ("resetting the engine and showing the current test configuration before starting it");
 $parser->show_conf;
