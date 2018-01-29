@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 36;
+our $VERSION = 37;
 
 
 
@@ -589,14 +589,14 @@ to run at startup and forget about it.
 =head3 a more complex one
 
 Lidia is a Perl programmer used to work in Win32 environments. She was tasked to secure a MSSQL server
-against brute force attacks. She worte a nice program similar to fail2ban in Perl that adds temporary
+against brute force attacks. She wrote a nice program similar to fail2ban in Perl that adds temporary
 rules to the local firewall. She though needs a plain logfile to itercept failed MSSQL logins and the
 source IPs of the attempts. She has enough experience to know that even if such attempts are shown as
 information, with the information icon, in the Event Viewer, they really are 'Failure Audit' ones.
 
 She also wants her logfiles to be daily, so she wants her program to stop at 23:59 
 
-She arrange the following program:
+She arranges the following program:
 
 	use strict;
 	use warnings;
@@ -676,7 +676,7 @@ design or on how C<Storable> works and interacts with the operating system.
 Typically this can happen when a registry is parsed for the first time and if you notice duplicate entries in your
 destination log you can workaround this misbehaviour running the first time your program with a short
 value for the C<endtime> option, like C< endtime =E<gt> time + 10> a distinct log for your rule, as
-C< log =E<gt> 'previous_entry' > but, very important, leaving untouched C<lastreadfile> so next run of your
+C< log =E<gt> 'previous_entries' > but, very important, leaving untouched C<lastreadfile> so next run of your
 program will read just new entries.
 
 
