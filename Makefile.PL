@@ -7,7 +7,7 @@ WriteMakefile(
     NAME             => 'Win32::Event2Log',
     AUTHOR           => q{Lorenzo Taviani <lorenzo@cpan.org>},
     VERSION_FROM     => 'lib/Win32/Event2Log.pm',
-    ABSTRACT    => 'Event2Log.pm',
+    ABSTRACT    => 'Win32::Event2Log This module uses Win32::EventLog to parse windows events and write them to plain logfiles. This module is rule based',
     LICENSE          => 'Perl',
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.006',
