@@ -55,7 +55,8 @@ ok ($rule5 == 1, "valid regex in rule as compiled regex");
 my $rule6 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
 				log => $ENV{TEMP}.'\logfile3.log',regex => 'invalid[class' );
 								
-ok ($rule6 == 0, "invalid regex in rule (source) (the above carp's messages are expected)");
+ok ($rule6 == 0, "invalid regex in rule (source)");
+diag ("  ^^^ the above carp's messages are expected");
 
 my $rule7 = $parser->add_rule( 	registry => 'System', source => 'EventLog', 
 				log => $ENV{TEMP}.'\logfile3.log',regex => 'EventLog|VSS' );
