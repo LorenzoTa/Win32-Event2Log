@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = '37.2';
+our $VERSION = '37.3';
 
 
 
@@ -226,8 +226,6 @@ sub start{
 			else{		
 					print "registry $reg has a total of $recs events with oldest with num. $base (last read was $$lastread)\n" if $$verbosity > 1;
 			
-					#print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
-					#		$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
 			}
 			# see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363646(v=vs.85).aspx 
 			# for event datastructure description
@@ -236,15 +234,14 @@ sub start{
 			my $read = 0;
 			#print "registry $reg ready to read a total of $recs events from oldest event num. $base (last read was $$lastread)\n";
 			while ($$lastread < $recs + $base - 1 ) {
-#print "-->DEBUG: $$lastread < ",$recs + $base - 1,"\n";
+					#print "-->DEBUG: $$lastread < ",$recs + $base - 1,"\n";
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
-									#$read+$base,   # offset
-									( $$lastread ? $$lastread + 1 : $read+$base), #offset WRONG!!!
+									( $$lastread ? $$lastread + 1 : $read+$base), #offset (was $read+$base,   # offset wrong if new event occured)
 									$evnt )      		# the hashref populeted
 							or die "Can't read EventLog entry ".($read+$base)."\n";
 					$first_read  = $evnt->{RecordNumber} if $first_read == 0;
-#print "-->DEBUG \$first_read  = $first_read  current event RecordNumber = ",$evnt->{RecordNumber},"\n";
+					#print "-->DEBUG \$first_read  = $first_read  current event RecordNumber = ",$evnt->{RecordNumber},"\n";
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
 						if ( 	$evnt->{Source} =~ $rule->{source} and
@@ -255,10 +252,10 @@ sub start{
 							open my $fh, '>>',$rule->{log} or die "unable to append to $rule->{log}";
 							print $fh $rule->{format}->($evnt);
 							close $fh;
-# print "'",$rule->{name},"' matched! wrote $reg event number ",
-		# $evnt->{RecordNumber}," to ",$rule->{log},"\n" 
-		# if $$verbosity > 1;
-#print Dumper \$evnt if $$verbosity > 2;
+							print "'",$rule->{name},"' matched! wrote $reg event number ",
+									$evnt->{RecordNumber}," to ",$rule->{log},"\n" 
+									if $$verbosity > 1;
+							print Dumper \$evnt if $$verbosity > 2;
 						}						
 					}
 					# end of rule matching
@@ -267,10 +264,12 @@ sub start{
 			}
 		print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
 				if $$verbosity > 0;
+		$self->write_last_numbers() if $first_read < $$lastread ;
 		} # end of foreach registry
+		
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
-		$self->write_last_numbers(); 
+		#$self->write_last_numbers(); 
 		sleep $self->{interval};
 	} # end of while 1 loop
 }
@@ -281,7 +280,7 @@ sub write_last_numbers{
 	foreach (keys %{$self->{rules}}){
 		print "storing ".$_.'_last'." with value of ".
 				$self->{$_.'_last'}."\n" if $self->{verbosity} > 2;
-#print "-->DEBUG storing ".$_.'_last'." with value of ".$self->{$_.'_last'}."\n";
+	#print "-->DEBUG storing ".$_.'_last'." with value of ".$self->{$_.'_last'}."\n";
 		
 		$tostore{$_.'_last'} = $self->{$_.'_last'};
 	}
