@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 37;
+our $VERSION = 38;
 
 
 
@@ -219,15 +219,13 @@ sub start{
 			$handle->GetNumber($recs) or die "Can't get number of EventLog records\n";
 			my $base; # starting from
 			$handle->GetOldest($base) or die "Can't get number of oldest EventLog record\n";
-			if ( $recs == $$lastread ){
+			if ( $recs + 1 == $$lastread - $base ){
 				print scalar(localtime(time))," no new events to read from $reg\n" if $$verbosity > 0;
 				next; # go to next registry
 			}
 			else{		
 					print "registry $reg has a total of $recs events with oldest with num. $base (last read was $$lastread)\n" if $$verbosity > 1;
 			
-					#print 	scalar(localtime(time))," working on the $reg registry reading from event number ",
-					#		$$lastread + $base," (with base $base)\n" if $$verbosity > 0;
 			}
 			# see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363646(v=vs.85).aspx 
 			# for event datastructure description
@@ -236,12 +234,14 @@ sub start{
 			my $read = 0;
 			#print "registry $reg ready to read a total of $recs events from oldest event num. $base (last read was $$lastread)\n";
 			while ($$lastread < $recs + $base - 1 ) {
+					#print "-->DEBUG: $$lastread < ",$recs + $base - 1,"\n";
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
-									$read+$base,   # offset
+									( $$lastread ? $$lastread + 1 : $read+$base), #offset (was $read+$base,   # offset wrong if new event occured)
 									$evnt )      		# the hashref populeted
 							or die "Can't read EventLog entry ".($read+$base)."\n";
 					$first_read  = $evnt->{RecordNumber} if $first_read == 0;
+					#print "-->DEBUG \$first_read  = $first_read  current event RecordNumber = ",$evnt->{RecordNumber},"\n";
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
 						if ( 	$evnt->{Source} =~ $rule->{source} and
@@ -264,10 +264,12 @@ sub start{
 			}
 		print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
 				if $$verbosity > 0;
+		$self->write_last_numbers() if $first_read < $$lastread ;
 		} # end of foreach registry
+		
 		# write each time the last numbers to storable file: 
 		# you cannot tell if the program will be stopped for example dusring shutdown
-		$self->write_last_numbers(); 
+		#$self->write_last_numbers(); 
 		sleep $self->{interval};
 	} # end of while 1 loop
 }
@@ -278,6 +280,8 @@ sub write_last_numbers{
 	foreach (keys %{$self->{rules}}){
 		print "storing ".$_.'_last'." with value of ".
 				$self->{$_.'_last'}."\n" if $self->{verbosity} > 2;
+	#print "-->DEBUG storing ".$_.'_last'." with value of ".$self->{$_.'_last'}."\n";
+		
 		$tostore{$_.'_last'} = $self->{$_.'_last'};
 	}
 	store \%tostore,$self->{lastreadfile};
@@ -622,15 +626,15 @@ She arranges the following program:
 
 	my $main_log = $0.'.mainlog.log';
 	my $last_numbers_log = $0.'.last_numbers.log';
-	my $mssql_log = $daily_string;
+	my $mssql_log = $0.'-'.$daily_string;
 
 
 
 	my $engine = Win32::Event2Log->new(	
-				interval 	=> 120,
-				endtime 	=> $next_end_of_day->epoch(),
+				interval 	=> 5,
+				endtime 	=> $next_end_of_day->epoch,
 				mainlog 	=> $main_log,	
-				verbosity	=> 0,
+				verbosity	=> 1,
 				lastreadfile=> $last_numbers_log,		
 	);
 
@@ -639,29 +643,30 @@ She arranges the following program:
 				registry => 'Application',
 				eventtype=> 'Failure Audit',
 				source	 => 'MSSQLSERVER',
-				regex	 => qr/Password did not match that for the login provided/,
 				log      => $mssql_log,
 				format	 => \&clean_output,
 							
 	);
 
 	sub clean_output {
-
 		my $ev = shift;
 		if (defined $ev->{'Message'}) {
 						  $ev->{'Message'} =~ s/\n/ /g;
-						  $ev->{'Message'} = lc ($ev->{'Message'});
-					  }
+		}
 		# she needs time in seconds since epoch in her other program
-		return $ev->{TimeGenerated},"\t",
-		Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
-		$ev->{Message}."\n";
+		return  $ev->{TimeGenerated},"\t",
+				# but also needs to read the timestamp in human format..
+				scalar localtime($ev->{TimeGenerated}),"\t",
+				Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
+				$ev->{RecordNumber},"\t",
+				$ev->{Message}."\n";
 	}
 
-	$engine->show_conf;
-
-
 	$engine->start;
+	sleep 5;
+	print "restarting $0 at: ",scalar localtime (time),"\n";
+	# a bad trick but better than dealing with scheduled tasks..
+	system ("perl $0");
 
 She runs the above program and sees the logfile growing up to 4Mb. See below caveats about interval.
 
