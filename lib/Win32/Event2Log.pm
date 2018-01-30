@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38.1;
+our $VERSION = 38.2;
 
 
 
@@ -611,7 +611,7 @@ She arranges the following program:
 		hour       => 23,
 		minute     => 59,
 		second     => 59,
-		 time_zone  => 'Europe/Rome',
+		time_zone  => 'Europe/Rome',
 	);
 
 	print "$0 scheduled to stop at ",(scalar localtime ($next_end_of_day->epoch)),"\n",
@@ -663,6 +663,56 @@ She arranges the following program:
 	system ("perl $0");
 
 She runs the above program and sees the logfile growing up to 4Mb. She also schedules the program to run at startup.
+
+=head3 working with exotic registries
+
+Barbara needs to inspect a strange misbehaviour in an application that writes entries in it's own
+registry mapped under 'Application and Services' in the Event Viewer.
+The program in this particular case is the 'AnyWhereConnect Secure Mobility Client' a VPN client
+she uses to connect to the work client from the desert island she inhabits since years.
+She knows that even if shown in a tree view, in the Event Viewer, all registries live in the folder
+named C<%SystemRoot%\System32\Winevt\Logs\> 
+Barbara discover at first glance in the Event Viewer that such evnts have not a Message field and
+the data is in the Strings field instead.
+She is aware that network guys will be not able to mount a custom registry to do the inspection
+so she decides to send them a plain logfile obtained with the following program:
+
+	use strict;
+	use warnings;
+
+	use Win32::Event2Log;
+
+	my $main_log = $0.'.mainlog.log';
+	my $last_numbers_log = $0.'.last_numbers.log';
+	my $sys_errors_log = $0.'.AnyWhereConnect_err_and_warn.log';
+
+	my $engine = Win32::Event2Log->new( endtime => time + 60 );
+
+	$engine->add_rule (
+				registry => 'AnyWhereConnect Secure Mobility Client',
+				eventtype=> 'error|warning',
+				source   => qr/./,
+				# regex it is checked against Message but
+				# this registry has them empty
+				regex	 => qr/.?/,
+				log      => $sys_errors_log, 
+				name     => 'AnyWhereConnect errors and warnings', 
+				format   => \&AnyWhereConnect_output,
+	);
+
+	sub AnyWhereConnect_output {
+					my $ev = shift;
+					# in this registry meat is in the Strings field
+					if (defined $ev->{'Strings'}) {$ev->{'Strings'} =~ s/\n/ /g;}
+					
+					return  $ev->{TimeGenerated},"\t",
+							scalar localtime($ev->{TimeGenerated}),"\t",
+							Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
+							$ev->{RecordNumber},"\t",
+							$ev->{Strings}."\n";
+	}
+
+	$engine->start;
 
 
 =head1 caveats
