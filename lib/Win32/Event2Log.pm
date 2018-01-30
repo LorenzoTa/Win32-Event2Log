@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = '37.3';
+our $VERSION = 38;
 
 
 
@@ -626,15 +626,15 @@ She arranges the following program:
 
 	my $main_log = $0.'.mainlog.log';
 	my $last_numbers_log = $0.'.last_numbers.log';
-	my $mssql_log = $daily_string;
+	my $mssql_log = $0.'-'.$daily_string;
 
 
 
 	my $engine = Win32::Event2Log->new(	
-				interval 	=> 120,
-				endtime 	=> $next_end_of_day->epoch(),
+				interval 	=> 5,
+				endtime 	=> $next_end_of_day->epoch,
 				mainlog 	=> $main_log,	
-				verbosity	=> 0,
+				verbosity	=> 1,
 				lastreadfile=> $last_numbers_log,		
 	);
 
@@ -643,29 +643,30 @@ She arranges the following program:
 				registry => 'Application',
 				eventtype=> 'Failure Audit',
 				source	 => 'MSSQLSERVER',
-				regex	 => qr/Password did not match that for the login provided/,
 				log      => $mssql_log,
 				format	 => \&clean_output,
 							
 	);
 
 	sub clean_output {
-
 		my $ev = shift;
 		if (defined $ev->{'Message'}) {
 						  $ev->{'Message'} =~ s/\n/ /g;
-						  $ev->{'Message'} = lc ($ev->{'Message'});
-					  }
+		}
 		# she needs time in seconds since epoch in her other program
-		return $ev->{TimeGenerated},"\t",
-		Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
-		$ev->{Message}."\n";
+		return  $ev->{TimeGenerated},"\t",
+				# but also needs to read the timestamp in human format..
+				scalar localtime($ev->{TimeGenerated}),"\t",
+				Win32::Event2Log::num_to_eventtype($ev->{EventType}),"\t",
+				$ev->{RecordNumber},"\t",
+				$ev->{Message}."\n";
 	}
 
-	$engine->show_conf;
-
-
 	$engine->start;
+	sleep 5;
+	print "restarting $0 at: ",scalar localtime (time),"\n";
+	# a bad trick but better than dealing with scheduled tasks..
+	system ("perl $0");
 
 She runs the above program and sees the logfile growing up to 4Mb. See below caveats about interval.
 
