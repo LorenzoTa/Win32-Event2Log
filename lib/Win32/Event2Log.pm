@@ -554,7 +554,7 @@ all the output was redirected to the main log specified in the engine constructo
 
 He open the above file to review the rule configuration and he sees:
 
-	rule  'System errors and warnings' for the registry System:
+	rule  'System errors and warnings' for the registry 'System':
 
 	eventtype     (?^:1|2)
 	log           event2log-test01.pl.System_err_warn.log
