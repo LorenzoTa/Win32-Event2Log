@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38;
+our $VERSION = 38.1;
 
 
 
@@ -65,12 +65,11 @@ sub check_rule_arg {
 	# check mandatory arguments
 	# the registry to open
 	unless (exists $arg{registry}){
-		carp "No registry specified for the rule (must be 'System', 'Application', 'Security')";
+		carp "No registry specified for the rule (must be 'System', 'Application', 'Security','Installation' or another valid one)";
 		return 0;
 	}
 	unless ( $arg{registry} =~ /System|Application|Security|Installation/){
-		carp "wrong or no registry specified for the rule (must be 'System', 'Application', 'Security', 'Installation')";
-		return 0;
+		carp "Custom registry '".$arg{registry}."' be sure to know it's format!";
 	}
 	# the source of the event
 	unless (exists $arg{source}){
@@ -232,21 +231,22 @@ sub start{
 			my $evnt;
 			# number of records read
 			my $read = 0;
-			#print "registry $reg ready to read a total of $recs events from oldest event num. $base (last read was $$lastread)\n";
 			while ($$lastread < $recs + $base - 1 ) {
-					#print "-->DEBUG: $$lastread < ",$recs + $base - 1,"\n";
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
 									( $$lastread ? $$lastread + 1 : $read+$base), #offset (was $read+$base,   # offset wrong if new event occured)
 									$evnt )      		# the hashref populeted
 							or die "Can't read EventLog entry ".($read+$base)."\n";
 					$first_read  = $evnt->{RecordNumber} if $first_read == 0;
-					#print "-->DEBUG \$first_read  = $first_read  current event RecordNumber = ",$evnt->{RecordNumber},"\n";
+					# in typical registries Message is set but can be undef for
+					# a registry not in System Security Application or Installation
+					# so setting Message to '' if undef lets other registries to be parsed too
+					$evnt->{Message} = '' unless $evnt->{Message};
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
-						if ( 	$evnt->{Source} =~ $rule->{source} and
-								($evnt->{Message} and $evnt->{Message}=~ $rule->{regex})  and
-								$evnt->{EventType} =~ $rule->{eventtype}
+						if ( 	$evnt->{Source} 	=~ $rule->{source} and
+								$evnt->{Message}	=~ $rule->{regex}  and
+								$evnt->{EventType} 	=~ $rule->{eventtype}
 							) 
 						{	
 							open my $fh, '>>',$rule->{log} or die "unable to append to $rule->{log}";
@@ -266,10 +266,6 @@ sub start{
 				if $$verbosity > 0;
 		$self->write_last_numbers() if $first_read < $$lastread ;
 		} # end of foreach registry
-		
-		# write each time the last numbers to storable file: 
-		# you cannot tell if the program will be stopped for example dusring shutdown
-		#$self->write_last_numbers(); 
 		sleep $self->{interval};
 	} # end of while 1 loop
 }
@@ -280,8 +276,6 @@ sub write_last_numbers{
 	foreach (keys %{$self->{rules}}){
 		print "storing ".$_.'_last'." with value of ".
 				$self->{$_.'_last'}."\n" if $self->{verbosity} > 2;
-	#print "-->DEBUG storing ".$_.'_last'." with value of ".$self->{$_.'_last'}."\n";
-		
 		$tostore{$_.'_last'} = $self->{$_.'_last'};
 	}
 	store \%tostore,$self->{lastreadfile};
@@ -308,7 +302,7 @@ sub show_conf{
 			grep{$_ ne 'rules'} sort keys %$self;
 	foreach my $reg (sort keys %{$self->{rules}}){
 			foreach my $rule ( @{$self->{rules}->{$reg}} ){
-				print "\nrule  '",$rule->{name},"' for the registry ".$reg.":\n\n";
+				print "\nrule  '",$rule->{name},"' for the registry '".$reg."':\n\n";
 				print 	map{"$_".(' ' x (14 - length $_)).$rule->{$_}."\n"			
 						} grep {$_ ne 'format' and $_ ne 'name'} sort keys %$rule;
 				print "format        ",(Dumper \$rule->{format}),"\n";
