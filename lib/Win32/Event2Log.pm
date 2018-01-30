@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 37;
+our $VERSION = '37.2';
 
 
 
@@ -219,7 +219,7 @@ sub start{
 			$handle->GetNumber($recs) or die "Can't get number of EventLog records\n";
 			my $base; # starting from
 			$handle->GetOldest($base) or die "Can't get number of oldest EventLog record\n";
-			if ( $recs == $$lastread ){
+			if ( $recs + 1 == $$lastread - $base ){
 				print scalar(localtime(time))," no new events to read from $reg\n" if $$verbosity > 0;
 				next; # go to next registry
 			}
@@ -236,12 +236,15 @@ sub start{
 			my $read = 0;
 			#print "registry $reg ready to read a total of $recs events from oldest event num. $base (last read was $$lastread)\n";
 			while ($$lastread < $recs + $base - 1 ) {
+#print "-->DEBUG: $$lastread < ",$recs + $base - 1,"\n";
 					# as per https://msdn.microsoft.com/it-it/library/windows/desktop/aa363674(v=vs.85).aspx
 					$handle->Read(	EVENTLOG_BACKWARDS_READ|EVENTLOG_SEEK_READ, 
-									$read+$base,   # offset
+									#$read+$base,   # offset
+									( $$lastread ? $$lastread + 1 : $read+$base), #offset WRONG!!!
 									$evnt )      		# the hashref populeted
 							or die "Can't read EventLog entry ".($read+$base)."\n";
 					$first_read  = $evnt->{RecordNumber} if $first_read == 0;
+#print "-->DEBUG \$first_read  = $first_read  current event RecordNumber = ",$evnt->{RecordNumber},"\n";
 					# rule matching
 					foreach my $rule (@{$self->{rules}->{$reg}}){
 						if ( 	$evnt->{Source} =~ $rule->{source} and
@@ -252,10 +255,10 @@ sub start{
 							open my $fh, '>>',$rule->{log} or die "unable to append to $rule->{log}";
 							print $fh $rule->{format}->($evnt);
 							close $fh;
-							print "'",$rule->{name},"' matched! wrote $reg event number ",
-									$evnt->{RecordNumber}," to ",$rule->{log},"\n" 
-									if $$verbosity > 1;
-							print Dumper \$evnt if $$verbosity > 2;
+# print "'",$rule->{name},"' matched! wrote $reg event number ",
+		# $evnt->{RecordNumber}," to ",$rule->{log},"\n" 
+		# if $$verbosity > 1;
+#print Dumper \$evnt if $$verbosity > 2;
 						}						
 					}
 					# end of rule matching
@@ -278,6 +281,8 @@ sub write_last_numbers{
 	foreach (keys %{$self->{rules}}){
 		print "storing ".$_.'_last'." with value of ".
 				$self->{$_.'_last'}."\n" if $self->{verbosity} > 2;
+#print "-->DEBUG storing ".$_.'_last'." with value of ".$self->{$_.'_last'}."\n";
+		
 		$tostore{$_.'_last'} = $self->{$_.'_last'};
 	}
 	store \%tostore,$self->{lastreadfile};
