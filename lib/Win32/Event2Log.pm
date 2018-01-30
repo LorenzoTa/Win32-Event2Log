@@ -668,7 +668,7 @@ She arranges the following program:
 	# a bad trick but better than dealing with scheduled tasks..
 	system ("perl $0");
 
-She runs the above program and sees the logfile growing up to 4Mb. See below caveats about interval.
+She runs the above program and sees the logfile growing up to 4Mb. She also schedules the program to run at startup.
 
 
 =head1 caveats
