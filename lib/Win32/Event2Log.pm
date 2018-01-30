@@ -672,7 +672,7 @@ The program in this particular case is the 'AnyWhereConnect Secure Mobility Clie
 she uses to connect to the work client from the desert island she inhabits since years.
 She knows that even if shown in a tree view, in the Event Viewer, all registries live in the folder
 named C<%SystemRoot%\System32\Winevt\Logs\> 
-Barbara discover at first glance in the Event Viewer that such evnts have not a Message field and
+Barbara discovers at first glance in the Event Viewer that such events have not Message field and
 the data is in the Strings field instead.
 She is aware that network guys will be not able to mount a custom registry to do the inspection
 so she decides to send them a plain logfile obtained with the following program:
