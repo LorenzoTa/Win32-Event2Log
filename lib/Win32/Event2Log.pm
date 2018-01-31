@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38.5;
+our $VERSION = 38.6;
 
 
 
@@ -264,8 +264,14 @@ sub start{
 					$read++;
 					$$lastread = $evnt->{RecordNumber};
 			}
-		print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
-				if $$verbosity > 0;
+		if ($read){
+			print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
+				if $$verbosity > 0;	
+		}
+		else{
+			print scalar(localtime(time))," succesfully read $read events from $reg registry from $first_read to $$lastread included\n" 
+				if $$verbosity > 1;
+		}		
 		$self->write_last_numbers() if $first_read < $$lastread ;
 		} # end of foreach registry
 		sleep $self->{interval};
