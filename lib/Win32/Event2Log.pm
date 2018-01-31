@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38.2;
+our $VERSION = 38.4;
 
 
 
@@ -670,9 +670,6 @@ Barbara needs to inspect a strange misbehaviour in an application that writes en
 registry mapped under 'Application and Services' in the Event Viewer.
 The program in this particular case is the 'AnyWhereConnect Secure Mobility Client' a VPN client
 she uses to connect to the work client from the desert island she inhabits since years.
-She knows that even if shown in a tree view, in the Event Viewer, all registries live in the folder
-named C<%SystemRoot%\System32\Winevt\Logs\> and can be accesed using the name shown in this folder,
-even if, as for the case of GPO events file, it's strange as C<Microsoft-Windows-GroupPolicy%4Operational>
 Barbara discovers at first glance in the Event Viewer that such events have not Message field and
 the data is in the Strings field instead.
 She is aware that network guys will be not able to mount a custom registry to do the inspection
@@ -716,7 +713,42 @@ so she decides to send them a plain logfile obtained with the following program:
 	$engine->start;
 
 
-=head1 caveats
+
+=head1 caveats about exotic registries
+
+Nowadays Win32 OS family is used to have many registries with or without events as you can see browsing
+the tree in the Event Viewer.
+Traditional registries are as always Application, System, Installation and Security. With these you probably
+will have not big troubles, permissions permitting.
+Below classical windows registries there is, in modern OSs, an application and services subtree: with first
+level registries of this subtree you can be able to use this module to parse events, as in the above last
+example.
+Fisically all registries are in the folder C<%SystemRoot%\System32\Winevt\Logs\> and you must look here to know
+the exact name of the registry to query (but without the C<.evtx> extension). In alternative you can click on the
+registry you want to pass to the engine in the Event Viewer and check the Properties where the real name is shown.
+
+With nested registries under Applications and Services, as the vendor subtree one,problems begin.
+
+In the C<%SystemRoot%\System32\Winevt\Logs\> folder these nested registries have names containing C<%4> in the
+name: this will translate int C</> in the effective name of the registry, indicating it's nested.
+
+There is no way to parse these ones with my module, I suspect because of the underlying L<Win32::EventLog> parser: infact
+it seems that if on of these registries (or a non existing one!) it's passed to L<Win32::EventLog> then
+the Application registry is returned, or well it's events.
+
+If you really have to parse these nested registries you can use the commandline utility C<wevtutil>. I plan the
+enanche my module to optionally use a wrapper around C<wevtutil> to parse registries. 
+Notice that parsing these regitries needs administrative rights. For the moment you run on your own. Good luck!
+
+
+
+=head1 bugs
+
+The main support forum for this module is perlmonks.org 
+
+Please report any bugs or feature requests to C<bug-win32-event2log at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-Event2Log>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
 
 When many many entries had to be read and written back and the time needed to do so exceeds what 
 specified as C<interval> it may happens that last numbers are no correctly written to the file C<lastreadfile>
@@ -728,16 +760,6 @@ destination log you can workaround this misbehaviour running the first time your
 value for the C<endtime> option, like C< endtime =E<gt> time + 10> a distinct log for your rule, as
 C< log =E<gt> 'previous_entries' > but, very important, leaving untouched C<lastreadfile> so next run of your
 program will read just new entries.
-
-
-=head1 bugs
-
-The main support forum for this module is perlmonks.org 
-
-Please report any bugs or feature requests to C<bug-win32-event2log at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Win32-Event2Log>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
-
 
 =head1 author
 
