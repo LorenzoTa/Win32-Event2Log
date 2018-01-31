@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38.4;
+our $VERSION = 38.5;
 
 
 
@@ -69,7 +69,9 @@ sub check_rule_arg {
 		return 0;
 	}
 	unless ( $arg{registry} =~ /System|Application|Security|Installation/){
-		carp "Custom registry '".$arg{registry}."' be sure to know it's format!";
+		carp "Custom registry '".$arg{registry}."' received!\n".
+			"Please notice that if a non existing registry or an unccesible one is passed 'Apllication' events are rturned!\n".
+			"See the section 'caveats about exotic registries' in the module documentation\n";
 	}
 	# the source of the event
 	unless (exists $arg{source}){
