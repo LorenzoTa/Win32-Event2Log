@@ -367,6 +367,10 @@ event's description. If the rule it's succesfull then an entry it's wrote in the
 A custom callback can transofrm the line to be wrote using the C<format> option.
 The parser can optionally shutdown itself if C<endtime> it is specified.
 
+The resulting engine it's designed to survive to shutdowns and user's interruption issued with C<CTRL-C> in the
+console or a kill of the PID: next run of the program will read just unparsed events on. This is achieved storing
+numbers of last event read (for each registry) in a file specified with the C<lastreadfile> argument.
+
 
 =head1 synopsis
 	
