@@ -1,5 +1,12 @@
 Revision history for Win32-Event2Log
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
+v38.1  Jan 30 2018 
+        Added support for custom registries and relative documentation.
+        Modified the test to just carp out some information to the end user
+        but the check for the rule insertion now pass even for custom registries.
 
+v38  Jan 30 2018 
+        Fixed offset in events number retreiving
+
+v25    Jan 25 2018  
+        Initial commit
