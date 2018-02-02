@@ -8,7 +8,7 @@ use Carp;
 use Storable;
 use Data::Dumper;
 
-our $VERSION = 38.6;
+our $VERSION = 38.7;
 
 
 
@@ -215,7 +215,7 @@ sub start{
 			#####
 			my $handle=Win32::EventLog->new($reg, $self->{computer}) or die "Can't open $reg EventLog\n";
 			# get message automatically populateed
-			$Win32::EventLog::GetMessageText = 1;
+			local $Win32::EventLog::GetMessageText = 1;
 			my $recs; # total number of records
 			$handle->GetNumber($recs) or die "Can't get number of EventLog records\n";
 			my $base; # starting from
@@ -349,13 +349,13 @@ sub num_to_eventtype{
 
 __DATA__
 
-=head1 name
+=head1 NAME
 
-Win32::Event2Log
+Win32::Event2Log - a rule based engine that reads events and writes to plain text logfiles
 
 =cut
 
-=head1 description
+=head1 DESCRIPTION
 
 This module uses L<Win32::EventLog> and parses windows events and write them to plain logfiles.
 This module is rule based: a rule it's a minimal set of conditions to be met to write an entry to a logfile.
@@ -372,7 +372,7 @@ console or a kill of the PID: next run of the program will read just unparsed ev
 numbers of last event read (for each registry) in a file specified with the C<lastreadfile> argument.
 
 
-=head1 synopsis
+=head1 SYNOPSIS
 	
 	use strict;
 	use warnings;
@@ -420,7 +420,7 @@ numbers of last event read (for each registry) in a file specified with the C<la
 	# from now the engine will run forever unless endtime was specified
 	$engine->start;
 	
-=head1 methods
+=head1 METHODS
 
 =head2 new
 
@@ -524,7 +524,7 @@ It is used internally to print the configuration before starting reading events 
 
 
 
-=head1 examples
+=head1 EXAMPLES
 
 =head3 a simple one
 
@@ -726,7 +726,7 @@ so she decides to send them a plain logfile obtained with the following program:
 
 
 
-=head1 caveats about exotic registries
+=head1 CAVEATS ABOUT EXOTIC REGISTRIES
 
 Nowadays Win32 OS family is used to have many registries with or without events as you can see browsing
 the tree in the Event Viewer.
@@ -754,7 +754,7 @@ Notice that parsing these regitries needs administrative rights. For the moment 
 
 
 
-=head1 bugs
+=head1 BUGS
 
 The main support forum for this module is perlmonks.org 
 
@@ -773,12 +773,52 @@ value for the C<endtime> option, like C< endtime =E<gt> time + 10> a distinct lo
 C< log =E<gt> 'previous_entries' > but, very important, leaving untouched C<lastreadfile> so next run of your
 program will read just new entries.
 
-=head1 author
+=head1 FURTHER READINGS
+
+=over 4
+
+=item * A POE module to read events 
+
+L<POE::Component::Win32::EventLog >
+
+
+=item * A perlmonks discussion about C<Win32::EventLog> with useful links to other resources and where L<http://www.perlmonks.org/?node_id=961|Anonymous Monk>
+kindly present a draft of an improvement over the original C<Win32::EventLog> module
+
+L<http://www.perlmonks.org/?node_id=930894>
+
+
+
+=item * A perlmonks discussion about C<Win32::EventLog> with some details on events parsing
+
+L<http://www.perlmonks.org/?node_id=1084734> see also L<http://www.perlmonks.org/?node_id=918061>
+
+
+=item * An article about event log categories
+
+L<http://www.drdobbs.com/customizing-event-log-categories/184405714>
+
+
+=item * An article about managing events via the command line utility C<wevtutil.exe>
+
+L<https://www.petri.com/command-line-event-log>
+
+
+
+
+
+
+
+=back
+
+
+
+=head1 AUTHOR
 
 Lorenzo Taviani, C<< <lorenzo at cpan.org> >>
 
 
-=head1 support
+=head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
@@ -808,12 +848,12 @@ L<http://search.cpan.org/dist/Win32-Event2Log/>
 =back
 
 
-=head1 acknoweledgemnts 
+=head1 ACKNOWELEDGEMNTS  
 
 This module would be not pssible without the underlying L<Win32::EventLog> one so many thanks to Jan Dubois for his work.
 
 
-=head1 license and copyright 
+=head1 LICENSE AND COPYRIGHT
 
 Copyright 2018 Lorenzo Taviani.
 
